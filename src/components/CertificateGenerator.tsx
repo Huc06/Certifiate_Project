@@ -14,13 +14,15 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
   const [templateLoaded, setTemplateLoaded] = useState(false);
   const [templateSrc, setTemplateSrc] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isIOS, setIsIOS] = useState<boolean>(false);
 
-  // Detect mobile via viewport width
+  // Detect mobile + iOS
   useEffect(() => {
     const query = window.matchMedia('(max-width: 640px)');
     const update = () => setIsMobile(query.matches);
     update();
     query.addEventListener?.('change', update);
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream);
     return () => query.removeEventListener?.('change', update);
   }, []);
 
@@ -44,9 +46,47 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
     return () => { cancelled = true; };
   }, [isMobile]);
 
+  async function generateViaCanvas(text: string, src: string) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = src;
+    await (img.decode?.() || new Promise<void>(res => (img.onload = () => res())));
+
+    const width = 480;
+    const height = 350;
+    const dpr = window.devicePixelRatio || 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(dpr, dpr);
+
+    // draw background
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // draw name
+    ctx.fillStyle = '#274877';
+    ctx.textAlign = 'center';
+    ctx.font = '700 30px serif'; // close to text-3xl
+    // top ~ 38%
+    ctx.fillText(text || '[NAME HERE]', width / 2, height * 0.38);
+
+    return canvas.toDataURL('image/png');
+  }
+
   const generateCertificate = async () => {
     if (!certRef.current) return;
     try {
+      // iOS/mobile path: use Canvas (more reliable)
+      if (isIOS || isMobile) {
+        const src = templateSrc || '/template.png';
+        const dataUrl = await generateViaCanvas(name, src);
+        setImageUrl(dataUrl);
+        if (onGenerated) onGenerated(name, dataUrl);
+        return;
+      }
+
+      // Desktop path: html-to-image
       if (imgRef.current && (imgRef.current as any).decode) {
         try { await (imgRef.current as any).decode(); } catch { /* ignore */ }
       }
