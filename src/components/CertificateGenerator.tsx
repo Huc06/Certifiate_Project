@@ -1,5 +1,5 @@
 import { toPng } from "html-to-image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CertificateGeneratorProps {
   name: string;
@@ -9,14 +9,57 @@ interface CertificateGeneratorProps {
 
 export default function CertificateGenerator({ name, setName, onGenerated }: CertificateGeneratorProps) {
   const certRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [templateLoaded, setTemplateLoaded] = useState(false);
+  const [templateSrc, setTemplateSrc] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  // Detect mobile via viewport width
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 640px)');
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener?.('change', update);
+    return () => query.removeEventListener?.('change', update);
+  }, []);
+
+  // Preload template as data URL (mobile only) to avoid CORS/decoding issues on iOS
+  useEffect(() => {
+    if (!isMobile) return; // desktop không cần dataURL
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/template.png', { cache: 'no-store' });
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (!cancelled) setTemplateSrc(reader.result as string);
+        };
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.error('Failed to preload template.png', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isMobile]);
 
   const generateCertificate = async () => {
     if (!certRef.current) return;
-    const dataUrl = await toPng(certRef.current, { pixelRatio: 2 });
-    setImageUrl(dataUrl);
-    if (onGenerated) onGenerated(name, dataUrl);
+    try {
+      if (imgRef.current && (imgRef.current as any).decode) {
+        try { await (imgRef.current as any).decode(); } catch { /* ignore */ }
+      }
+      const options = (isMobile
+        ? { pixelRatio: 2, cacheBust: true }
+        : { pixelRatio: 2 }
+      );
+      const dataUrl = await toPng(certRef.current, options);
+      setImageUrl(dataUrl);
+      if (onGenerated) onGenerated(name, dataUrl);
+    } catch (e) {
+      console.error('Generate certificate failed', e);
+    }
   };
 
   return (
@@ -31,7 +74,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
         />
         <button
           onClick={generateCertificate}
-          disabled={!name || !templateLoaded}
+          disabled={!name || !templateLoaded || (isMobile && !templateSrc)}
           className="bg-blue-600 text-white rounded px-5 py-2 font-semibold shadow hover:bg-blue-700 disabled:opacity-60 w-full sm:w-auto whitespace-nowrap"
         >
           Generate
@@ -41,10 +84,12 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
         {!imageUrl ? (
           <div ref={certRef} className="relative w-full h-full select-none rounded-lg overflow-hidden shadow">
             <img
-              src="/template.png"
+              ref={imgRef}
+              src={isMobile && templateSrc ? templateSrc : "/template.png"}
               alt="template"
               className="w-full h-full object-cover"
               onLoad={() => setTemplateLoaded(true)}
+              crossOrigin="anonymous"
               draggable={false}
             />
             <div className="absolute left-1/2 -translate-x-1/2 top-[38%] sm:top-[40%] w-full">
