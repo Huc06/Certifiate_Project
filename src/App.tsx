@@ -1,7 +1,7 @@
 import LetterGlitch from "./components/LetterGlitch";
 import { Button } from "@/components/ui/button";
 import { MyConnectButton } from "@/components/ui/MyConnectButton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCertificateMint } from "@/services/CertificateServices";
 import CertificateGenerator from "@/components/CertificateGenerator";
 import TextType from "@/components/TextType";
@@ -17,10 +17,28 @@ function App() {
   const [minting, setMinting] = useState(false); // Local loading state
   const [minted, setMinted] = useState(false);
   const [txDigest, setTxDigest] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
 
   async function handleImageGenerated(_name: string, url: string) {
     setImageUrl(url);
     setIpfsUrl(null);
+
+    if (isMobile) {
+      // Mobile: do not auto-upload; user will click Upload next
+      toast.success("Image ready. Upload to IPFS to continue.");
+      return;
+    }
+
+    // Desktop: auto-upload
     const toastId = toast.loading("Uploading to IPFS...");
     try {
       const { ipfsUrl } = await uploadImageToPinata(url, `${_name}.png`);
@@ -33,9 +51,26 @@ function App() {
     }
   }
 
+  async function handleManualUpload() {
+    if (!imageUrl || !name) return;
+    setUploading(true);
+    const toastId = toast.loading("Uploading to IPFS...");
+    try {
+      const { ipfsUrl } = await uploadImageToPinata(imageUrl, `${name}.png`);
+      setIpfsUrl(ipfsUrl);
+      toast.success("Successfully uploaded to IPFS!", { id: toastId });
+    } catch (e) {
+      setIpfsUrl(null);
+      toast.error("Failed to upload to Pinata! Please check your .env.local file.", { id: toastId });
+      console.error("Pinata upload error:", e);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleMint() {
     if (!ipfsUrl) {
-      toast.error("IPFS URL not available! Please wait for upload to complete.");
+      toast.error("IPFS URL not available! Please upload to IPFS first.");
       return;
     }
     try {
@@ -108,7 +143,7 @@ function App() {
           onGenerated={handleImageGenerated}
         />
         {imageUrl && (
-          <div className="flex flex-col items-center gap-3 mt-4 w-full max-w-md px-4">
+          <div className="flex flex-col items-center gap-3 mt-4 w-full max-w-[480px] mx-auto px-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button
                 asChild
@@ -122,14 +157,26 @@ function App() {
                   Download PNG
                 </a>
               </Button>
-              <Button
-                onClick={handleMint}
-                disabled={!name || !imageUrl || minting}
-                className="flex-1"
-              >
-                {minting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {minting ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
-              </Button>
+              {isMobile && !ipfsUrl && (
+                <Button
+                  onClick={handleManualUpload}
+                  disabled={uploading}
+                  className="flex-1"
+                >
+                  {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {uploading ? "Uploading..." : "Upload to IPFS"}
+                </Button>
+              )}
+              {!isMobile && (
+                <Button
+                  onClick={handleMint}
+                  disabled={!name || !imageUrl || minting || !ipfsUrl}
+                  className="flex-1"
+                >
+                  {minting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {minting ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
+                </Button>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               {ipfsUrl && (
@@ -157,6 +204,18 @@ function App() {
                 </Button>
               )}
             </div>
+            {isMobile && (
+              <div className="flex w-full">
+                <Button
+                  onClick={handleMint}
+                  disabled={!name || !imageUrl || minting || !ipfsUrl}
+                  className="w-full"
+                >
+                  {minting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {minting ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>
