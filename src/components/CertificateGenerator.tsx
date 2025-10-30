@@ -16,6 +16,10 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
 
+  // Desired vertical positions (as a fraction of height)
+  const NAME_TOP_MOBILE = 0.42;   // slightly lower on mobile
+  const NAME_TOP_DESKTOP = 0.40;  // original desktop position
+
   // Detect mobile + iOS
   useEffect(() => {
     const query = window.matchMedia('(max-width: 640px)');
@@ -67,9 +71,10 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
     // draw name
     ctx.fillStyle = '#274877';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.font = '700 30px serif'; // close to text-3xl
-    // top ~ 38%
-    ctx.fillText(text || '[NAME HERE]', width / 2, height * 0.38);
+    const topFraction = (isMobile ? NAME_TOP_MOBILE : NAME_TOP_DESKTOP);
+    ctx.fillText(text || '[NAME HERE]', width / 2, height * topFraction);
 
     return canvas.toDataURL('image/png');
   }
@@ -132,7 +137,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
               crossOrigin="anonymous"
               draggable={false}
             />
-            <div className="absolute left-1/2 -translate-x-1/2 top-[38%] sm:top-[40%] w-full">
+            <div className={`absolute left-1/2 -translate-x-1/2 w-full ${isMobile ? 'top-[42%]' : 'sm:top-[40%] top-[40%]'}`}>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#274877] italic text-center whitespace-nowrap px-2">
                 {name || "[NAME HERE]"}
               </h1>
