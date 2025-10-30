@@ -17,8 +17,8 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
   const [isIOS, setIsIOS] = useState<boolean>(false);
 
   // Desired vertical positions (as a fraction of height)
-  const NAME_TOP_MOBILE = 0.41;   // iOS/mobile position
-  const NAME_TOP_DESKTOP = 0.40;  // desktop position
+  const NAME_TOP_MOBILE = 0.47;   // iOS/mobile position (adjusted for 16:9)
+  const NAME_TOP_DESKTOP = 0.46;  // desktop position (adjusted for 16:9)
 
   // Detect mobile + iOS
   useEffect(() => {
@@ -56,8 +56,8 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
     img.src = src;
     await (img.decode?.() || new Promise<void>(res => (img.onload = () => res())));
 
-    const width = 480;
-    const height = 350;
+    const width = 800;   // 16:9 aspect ratio
+    const height = 450;
     const dpr = window.devicePixelRatio || 1;
     const canvas = document.createElement('canvas');
     canvas.width = width * dpr;
@@ -72,7 +72,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
     ctx.fillStyle = '#274877';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '700 30px serif'; // close to text-3xl
+    ctx.font = '700 50px serif'; // scaled up for larger canvas
     const topFraction = (isMobile ? NAME_TOP_MOBILE : NAME_TOP_DESKTOP);
     ctx.fillText(text || '[NAME HERE]', width / 2, height * topFraction);
 
@@ -109,12 +109,12 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
 
   return (
     <div className="flex flex-col items-center gap-4 w-full px-4">
-      <div className="flex flex-col sm:flex-row gap-2 items-center mx-auto w-full max-w-md">
+      <div className="flex flex-col sm:flex-row gap-2 items-center mx-auto w-full max-w-md px-4">
         <input
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Enter student name"
-          className="border rounded p-2 w-full sm:w-[240px] text-base"
+          className="border rounded px-3 py-2 w-full sm:w-[240px] text-base"
           maxLength={32}
         />
         <button
@@ -125,7 +125,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
           Generate
         </button>
       </div>
-      <div className="relative w-full max-w-[480px] aspect-[480/350] mx-auto">
+      <div className="relative w-full max-w-[800px] aspect-[16/9] mx-auto">
         {!imageUrl ? (
           <div ref={certRef} className="relative w-full h-full select-none rounded-lg overflow-hidden shadow">
             <img
@@ -137,7 +137,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
               crossOrigin="anonymous"
               draggable={false}
             />
-            <div className={`absolute left-1/2 -translate-x-1/2 w-full ${isMobile ? 'top-[41%]' : 'sm:top-[40%] top-[40%]'}`}>
+            <div className={`absolute left-1/2 -translate-x-1/2 w-full ${isMobile ? 'top-[47%]' : 'sm:top-[46%] top-[46%]'}`}>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#274877] italic text-center whitespace-nowrap px-2">
                 {name || "[NAME HERE]"}
               </h1>

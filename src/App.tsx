@@ -96,7 +96,7 @@ function App() {
       </header>
 
       {/* Hero with CertificateGenerator */}
-      <main className="relative z-10 flex flex-col items-center justify-center pt-28 md:pt-40 px-4">
+      <main className="relative z-10 flex flex-col items-center pt-24 md:pt-32 px-4 pb-20 min-h-screen">
         <TextType
           text={["Congratulations", "You are now a real builder!"]}
           as="h1"
@@ -112,12 +112,13 @@ function App() {
           onGenerated={handleImageGenerated}
         />
         {imageUrl && (
-          <div className="flex flex-col items-center gap-3 mt-4 w-full max-w-[480px] mx-auto px-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
+          <div className="flex flex-col items-center gap-3 mt-4 w-full max-w-[800px] mx-auto px-4">
+            {/* Desktop: All in one row */}
+            <div className="hidden sm:flex flex-row gap-2 w-full">
               <Button
                 asChild
                 variant="outline"
-                className="bg-green-600 text-white flex-1"
+                className="bg-green-600 text-white"
               >
                 <a
                   href={imageUrl}
@@ -129,18 +130,15 @@ function App() {
               <Button
                 onClick={handleMint}
                 disabled={!name || !imageUrl || minting || !ipfsUrl}
-                className="flex-1"
               >
                 {minting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {minting ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
               </Button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
               {ipfsUrl && (
                 <Button
                   asChild
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <a href={ipfsUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-3 h-3 mr-1" />
@@ -152,7 +150,7 @@ function App() {
                 <Button
                   asChild
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <a href={`https://suiscan.xyz/testnet/tx/${txDigest}`} target="_blank" rel="noopener noreferrer">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -160,6 +158,58 @@ function App() {
                   </a>
                 </Button>
               )}
+            </div>
+
+            {/* Mobile: Two rows */}
+            <div className="flex sm:hidden flex-col gap-3 w-full">
+              <div className="flex flex-row gap-3 w-full">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="bg-green-600 text-white flex-1"
+                >
+                  <a
+                    href={imageUrl}
+                    download={`${name.replace(/\s+/g, "_") || "certificate"}-gdu2025.png`}
+                  >
+                    Download PNG
+                  </a>
+                </Button>
+                <Button
+                  onClick={handleMint}
+                  disabled={!name || !imageUrl || minting || !ipfsUrl}
+                  className="flex-1"
+                >
+                  {minting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {minting ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
+                </Button>
+              </div>
+              <div className="flex flex-row gap-2 w-full">
+                {ipfsUrl && (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                  >
+                    <a href={ipfsUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      View on IPFS
+                    </a>
+                  </Button>
+                )}
+                {txDigest && (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                  >
+                    <a href={`https://suiscan.xyz/testnet/tx/${txDigest}`} target="_blank" rel="noopener noreferrer">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      View on SuiScan
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
