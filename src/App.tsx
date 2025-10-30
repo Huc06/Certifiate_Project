@@ -1,8 +1,10 @@
 import LetterGlitch from "./components/LetterGlitch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MyConnectButton } from "@/components/ui/MyConnectButton";
 
 function App() {
+  console.log('Mysten ConnectButton:', MyConnectButton);
   return (
     <>
       {/* Background */}
@@ -14,12 +16,13 @@ function App() {
       <header className="fixed left-0 right-0 top-4 sm:top-6 md:top-10 z-30 flex justify-center select-none pointer-events-none">
         <div className="pointer-events-auto flex items-center justify-between gap-4 md:gap-6 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl px-4 py-3 md:px-8 md:py-5 shadow-lg w-full max-w-[1100px] mx-4 md:mx-8">
           <div className="font-semibold text-slate-100">Dolphinder</div>
-          <nav className="space-x-3 md:space-x-6 text-slate-200 text-sm md:text-base">
+          <nav className="flex items-center space-x-3 md:space-x-6 text-slate-200 text-sm md:text-base">
             <a href="#" className="font-semibold text-slate-100 hover:text-blue-500 ">Home</a>
             <a href="https://dolphinder.com/" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-slate-100 hover:text-blue-500 ">Docs</a>
+            <MyConnectButton />
           </nav>
         </div>
       </header>
