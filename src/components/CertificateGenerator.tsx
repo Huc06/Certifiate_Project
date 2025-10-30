@@ -52,8 +52,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
         >
           {/* Chỉ điền tên sinh viên vào đúng vị trí */}
           <div 
-            className="absolute left-1/2 -translate-x-1/2"
-            style={{ top: "40%" }}
+            className="absolute left-1/2 -translate-x-1/2 top-[38%] sm:top-[40%]"
           >
             <h1 className="text-2xl sm:text-3xl font-bold text-[#274877] italic text-center whitespace-nowrap px-2">
               {name || "[NAME HERE]"}
