@@ -5,22 +5,68 @@ import { useState } from "react";
 import { useCertificateMint } from "@/services/CertificateServices";
 import CertificateGenerator from "@/components/CertificateGenerator";
 import TextType from "@/components/TextType";
+import { uploadImageToPinata } from "@/services/pinata";
+import { toast } from "sonner";
+import { ExternalLink, CheckCircle2, Loader2 } from "lucide-react";
 
 function App() {
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const { mintCertificate, isPending, isError, error } = useCertificateMint();
+  const [ipfsUrl, setIpfsUrl] = useState<string | null>(null);
+  const { mintCertificate } = useCertificateMint();
+  const [minting, setMinting] = useState(false); // Local loading state
   const [minted, setMinted] = useState(false);
+  const [txDigest, setTxDigest] = useState<string | null>(null);
+
+  async function handleImageGenerated(_name: string, url: string) {
+    setImageUrl(url);
+    setIpfsUrl(null);
+    const toastId = toast.loading("Uploading to IPFS...");
+    try {
+      const { ipfsUrl } = await uploadImageToPinata(url, `${_name}.png`);
+      setIpfsUrl(ipfsUrl);
+      toast.success("Successfully uploaded to IPFS!", { id: toastId });
+    } catch (e) {
+      setIpfsUrl(null);
+      toast.error("Failed to upload to Pinata! Please check your .env.local file.", { id: toastId });
+      console.error("Pinata upload error:", e);
+    }
+  }
 
   async function handleMint() {
+    if (!ipfsUrl) {
+      toast.error("IPFS URL not available! Please wait for upload to complete.");
+      return;
+    }
     try {
+      setMinting(true);
       setMinted(false);
-      const result = await mintCertificate(name);
-      setMinted(true);
-      console.log("Mint success!", result);
+      setTxDigest(null);
+      const toastId = toast.loading("Minting certificate on-chain...");
+      
+      const result = await mintCertificate(name, ipfsUrl);
+      
+      // Wait for transaction confirmation
+      if (result && result.digest) {
+        setMinted(true);
+        setTxDigest(result.digest);
+        console.log("Mint success!", result);
+        toast.success("Certificate minted successfully! 🎉", {
+          id: toastId,
+          description: "View your NFT on SuiScan",
+          action: {
+            label: "View",
+            onClick: () => window.open(`https://suiscan.xyz/testnet/tx/${result.digest}`, '_blank')
+          }
+        });
+      }
     } catch (e) {
       setMinted(false);
+      setTxDigest(null);
       console.error("Mint error", e);
+      toast.error("Mint failed: " + (e as Error).message);
+    } finally {
+      setMinting(false);
     }
   }
 
@@ -59,27 +105,59 @@ function App() {
         <CertificateGenerator
           name={name}
           setName={setName}
-          onGenerated={(_name, url) => { setImageUrl(url); }}
+          onGenerated={handleImageGenerated}
         />
         {imageUrl && (
-          <div className="flex flex-row gap-3 mt-3">
-            <a
-              href={imageUrl}
-              download={`${name.replace(/\s+/g, "_") || "certificate"}-gdu2025.png`}
-              className="bg-green-600 text-white px-5 py-2 font-semibold rounded shadow hover:bg-green-700 transition"
-            >
-              Download PNG
-            </a>
-            <Button
-              onClick={handleMint}
-              disabled={!name || !imageUrl || isPending}
-            >
-              {isPending ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
-            </Button>
+          <div className="flex flex-col items-center gap-3 mt-4 w-full max-w-md px-4">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <Button
+                asChild
+                variant="outline"
+                className="bg-green-600 text-white flex-1"
+              >
+                <a
+                  href={imageUrl}
+                  download={`${name.replace(/\s+/g, "_") || "certificate"}-gdu2025.png`}
+                >
+                  Download PNG
+                </a>
+              </Button>
+              <Button
+                onClick={handleMint}
+                disabled={!name || !imageUrl || minting}
+                className="flex-1"
+              >
+                {minting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {minting ? "Minting..." : minted ? "Minted!" : "Mint Certificate"}
+              </Button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              {ipfsUrl && (
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                >
+                  <a href={ipfsUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    View on IPFS
+                  </a>
+                </Button>
+              )}
+              {txDigest && (
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                >
+                  <a href={`https://suiscan.xyz/testnet/tx/${txDigest}`} target="_blank" rel="noopener noreferrer">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    View on SuiScan
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
-        )}
-        {isError && error && (
-          <div className="text-red-400 text-xs pt-2">{(error as Error).message}</div>
         )}
       </main>
     </>
