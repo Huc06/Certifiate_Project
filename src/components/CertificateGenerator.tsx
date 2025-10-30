@@ -38,37 +38,37 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
       </div>
       
       {/* Nếu chưa generate, hiện template live; nếu đã generate, hiện ảnh PNG */}
-      {!imageUrl ? (
-        <div
-          ref={certRef}
-          id="certificate"
-          className="relative w-full max-w-[480px] aspect-[480/350] rounded-lg overflow-hidden shadow select-none mx-auto"
-          style={{
-            fontFamily: "serif",
-            backgroundImage: "url('/template.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center"
-          }}
-        >
-          {/* Chỉ điền tên sinh viên vào đúng vị trí */}
-          <div 
-            className="absolute left-1/2 -translate-x-1/2 top-[38%] sm:top-[40%]"
+      <div className="relative w-full max-w-[480px] aspect-[480/350] mx-auto">
+        {!imageUrl ? (
+          <div
+            ref={certRef}
+            id="certificate"
+            className="relative w-full h-full rounded-lg overflow-hidden shadow select-none"
+            style={{
+              fontFamily: "serif",
+              backgroundImage: "url('/template.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }}
           >
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#274877] italic text-center whitespace-nowrap px-2">
-              {name || "[NAME HERE]"}
-            </h1>
+            {/* Chỉ điền tên sinh viên vào đúng vị trí */}
+            <div 
+              className="absolute left-1/2 -translate-x-1/2 top-[38%] sm:top-[40%]"
+            >
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#274877] italic text-center whitespace-nowrap px-2">
+                {name || "[NAME HERE]"}
+              </h1>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-3 w-full">
+        ) : (
           <img
             src={imageUrl}
             alt="Generated Certificate"
-            className="border rounded-xl shadow w-full max-w-[480px] aspect-[480/350] object-cover mx-auto"
+            className="w-full h-full rounded-xl shadow object-cover"
             draggable={false}
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
