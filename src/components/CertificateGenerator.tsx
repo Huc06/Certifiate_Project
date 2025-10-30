@@ -17,7 +17,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
   const [isIOS, setIsIOS] = useState<boolean>(false);
 
   // Desired vertical positions (as a fraction of height)
-  const NAME_TOP_MOBILE = 0.41;   // iOS/mobile position
+  const NAME_TOP_MOBILE = 0.40;   // iOS/mobile position
   const NAME_TOP_DESKTOP = 0.40;  // desktop position
 
   // Detect mobile + iOS
@@ -137,7 +137,7 @@ export default function CertificateGenerator({ name, setName, onGenerated }: Cer
               crossOrigin="anonymous"
               draggable={false}
             />
-            <div className={`absolute left-1/2 -translate-x-1/2 w-full ${isMobile ? 'top-[41%]' : 'sm:top-[40%] top-[40%]'}`}>
+            <div className={`absolute left-1/2 -translate-x-1/2 w-full ${isMobile ? 'top-[40%]' : 'sm:top-[40%] top-[40%]'}`}>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#274877] italic text-center whitespace-nowrap px-2">
                 {name || "[NAME HERE]"}
               </h1>
